@@ -10,14 +10,14 @@ from flask import Flask, request, jsonify, send_from_directory, session, redirec
 import yt_dlp
 import whisper
 
-# Deno für YouTube JS-Runtime verfügbar machen
-os.environ["PATH"] = "/home/ubuntu/.deno/bin:" + os.environ.get("PATH", "")
+# Deno für YouTube JS-Runtime verfügbar machen (lokal)
+os.environ["PATH"] = "/home/ubuntu/.deno/bin:/usr/local/bin:" + os.environ.get("PATH", "")
 
 app = Flask(__name__, static_folder="static")
-app.secret_key = secrets.token_hex(32)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", secrets.token_hex(32))
 
-DOWNLOAD_DIR = Path("/home/ubuntu/transcriber/downloads")
-DOWNLOAD_DIR.mkdir(exist_ok=True)
+DOWNLOAD_DIR = Path(os.environ.get("DOWNLOAD_DIR", "/tmp/transcriber_downloads"))
+DOWNLOAD_DIR.mkdir(exist_ok=True, parents=True)
 
 # Supadata API Key
 SUPADATA_API_KEY = "sd_8e4855c8561793a566320b077616d7be"
@@ -315,4 +315,5 @@ def serve_static(path):
 
 if __name__ == "__main__":
     threading.Thread(target=get_whisper_model, daemon=True).start()
-    app.run(host="0.0.0.0", port=7860, debug=False)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port, debug=False)

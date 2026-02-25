@@ -1,7 +1,8 @@
+cookies.txt
 downloads/
-*.log
+server.log
 __pycache__/
 *.pyc
 .env
 cookies.txt
-nohup.out
+server.log

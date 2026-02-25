@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Transcriber</title>
+  <style>
+    :root {
+      --bg: #0f0f13;
+      --surface: #1a1a24;
+      --surface2: #22222f;
+      --border: #2e2e40;
+      --accent: #7c6af7;
+      --accent2: #a78bfa;
+      --text: #e8e8f0;
+      --muted: #8888a8;
+      --success: #34d399;
+      --error: #f87171;
+      --ig: #e1306c;
+      --tt: #aaaaaa;
+      --yt: #ff0000;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ══════════════════════════════════════════
+       LOGIN SCREEN
+    ══════════════════════════════════════════ */
+    #loginScreen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(124,106,247,0.12) 0%, transparent 70%);
+    }
+    #loginScreen.hidden { display: none; }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 44px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .login-logo-icon {
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      margin-bottom: 14px;
+    }
+    .login-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+    .login-subtitle {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 7px;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 16px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: var(--accent); }
+    .form-input::placeholder { color: var(--muted); }
+
+    .btn-login {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-login:hover { opacity: 0.9; }
+    .btn-login:active { transform: scale(0.98); }
+    .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .login-error {
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.3);
+      color: var(--error);
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-size: 0.85rem;
+      margin-top: 14px;
+      display: none;
+    }
+
+    /* ══════════════════════════════════════════
+       MAIN APP
+    ══════════════════════════════════════════ */
+    #appScreen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px 80px;
+      min-height: 100vh;
+    }
+    #appScreen.visible { display: flex; }
+
+    /* Top Bar */
+    .topbar {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 10px; }
+    .topbar-logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+    .topbar-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .topbar-user {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .btn-logout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-logout:hover { border-color: var(--error); color: var(--error); }
+
+    /* Platform Badges */
+    .platform-badges {
+      display: flex; gap: 10px; justify-content: center;
+      flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 100px;
+      font-size: 0.82rem; font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .badge.ig { border-color: rgba(225,48,108,0.4); color: var(--ig); }
+    .badge.tt { border-color: rgba(170,170,170,0.3); color: #ccc; }
+    .badge.yt { border-color: rgba(255,0,0,0.4); color: var(--yt); }
+    .badge.more { color: var(--muted); }
+
+    /* Main Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      width: 100%;
+      max-width: 720px;
+    }
+    .card-label {
+      font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.08em; color: var(--muted);
+      text-transform: uppercase; margin-bottom: 14px;
+    }
+    .input-row { display: flex; gap: 10px; align-items: stretch; }
+    .url-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .url-input:focus { border-color: var(--accent); }
+    .url-input::placeholder { color: var(--muted); }
+    .lang-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+      cursor: pointer;
+      min-width: 110px;
+    }
+    .btn-transcribe {
+      background: var(--accent);
+      color: white; border: none;
+      border-radius: 10px;
+      padding: 12px 22px;
+      font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-transcribe:hover { background: var(--accent2); }
+    .btn-transcribe:active { transform: scale(0.98); }
+    .btn-transcribe:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Progress */
+    .progress-bar-wrap {
+      margin-top: 16px;
+      background: var(--surface2);
+      border-radius: 100px;
+      height: 4px; overflow: hidden; display: none;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 100px;
+      animation: progress-anim 2s ease-in-out infinite;
+    }
+    @keyframes progress-anim {
+      0% { width: 10%; } 50% { width: 80%; } 100% { width: 10%; }
+    }
+    .progress-text {
+      margin-top: 10px; font-size: 0.85rem;
+      color: var(--muted); text-align: center; display: none;
+    }
+
+    /* Alerts */
+    .alert {
+      margin-top: 14px; padding: 12px 16px;
+      border-radius: 10px; font-size: 0.88rem; display: none;
+    }
+    .alert.error { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); color: var(--error); }
+
+    /* Result */
+    .result-card {
+      margin-top: 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px; display: none;
+    }
+    .result-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+    }
+    .result-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .platform-tag {
+      font-size: 0.75rem; font-weight: 700; padding: 3px 10px;
+      border-radius: 100px; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .platform-tag.instagram { background: rgba(225,48,108,0.15); color: var(--ig); }
+    .platform-tag.tiktok { background: rgba(170,170,170,0.1); color: #ccc; }
+    .platform-tag.youtube { background: rgba(255,0,0,0.12); color: var(--yt); }
+    .platform-tag.other { background: rgba(124,106,247,0.15); color: var(--accent2); }
+    .lang-tag {
+      font-size: 0.75rem; color: var(--muted);
+      background: var(--surface); padding: 3px 10px;
+      border-radius: 100px; border: 1px solid var(--border);
+    }
+    .method-tag {
+      font-size: 0.72rem; color: var(--muted);
+      background: var(--surface); padding: 3px 10px;
+      border-radius: 100px; border: 1px solid var(--border);
+    }
+    .result-actions { display: flex; gap: 8px; }
+    .btn-copy, .btn-download {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text); border-radius: 8px;
+      padding: 6px 14px; font-size: 0.82rem;
+      cursor: pointer; transition: border-color 0.2s;
+    }
+    .btn-copy:hover, .btn-download:hover { border-color: var(--accent); color: var(--accent2); }
+    .result-text {
+      font-size: 0.93rem; line-height: 1.75;
+      color: var(--text); white-space: pre-wrap; word-break: break-word;
+    }
+
+    /* Segments */
+    .segments-toggle {
+      margin-top: 14px; font-size: 0.82rem; color: var(--muted);
+      cursor: pointer; user-select: none;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .segments-toggle:hover { color: var(--accent2); }
+    .segments-list {
+      margin-top: 10px; display: none;
+      max-height: 280px; overflow-y: auto;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surface);
+    }
+    .segment {
+      display: flex; gap: 12px; padding: 8px 14px;
+      border-bottom: 1px solid var(--border); font-size: 0.83rem;
+    }
+    .segment:last-child { border-bottom: none; }
+    .seg-time { color: var(--accent); min-width: 80px; font-variant-numeric: tabular-nums; }
+    .seg-text { color: var(--text); }
+
+    /* History */
+    .history-section { margin-top: 32px; width: 100%; max-width: 720px; }
+    .history-title {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+      color: var(--muted); text-transform: uppercase; margin-bottom: 12px;
+    }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px;
+      cursor: pointer; transition: border-color 0.2s;
+    }
+    .history-item:hover { border-color: var(--accent); }
+    .history-item-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .history-item-text {
+      font-size: 0.85rem; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 48px; text-align: center;
+      font-size: 0.78rem; color: var(--muted); line-height: 1.8;
+    }
+    .footer a { color: var(--accent2); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block; width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%;
+      animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <!-- ══ LOGIN SCREEN ══ -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">🎙</div>
+        <div class="login-title">Video Transcriber</div>
+        <div class="login-subtitle">Melde dich an, um fortzufahren</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="loginUser">Benutzername</label>
+        <input class="form-input" type="text" id="loginUser" placeholder="Benutzername eingeben" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="loginPass">Passwort</label>
+        <input class="form-input" type="password" id="loginPass" placeholder="Passwort eingeben" autocomplete="current-password" />
+      </div>
+
+      <button class="btn-login" id="loginBtn" onclick="doLogin()">Anmelden</button>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </div>
+
+  <!-- ══ MAIN APP ══ -->
+  <div id="appScreen">
+
+    <!-- Top Bar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-logo">🎙</div>
+        <span class="topbar-title">Video Transcriber</span>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-user" id="topbarUser"></span>
+        <button class="btn-logout" onclick="doLogout()">Abmelden</button>
+      </div>
+    </div>
+
+    <!-- Platform Badges -->
+    <div class="platform-badges">
+      <span class="badge ig">📷 Instagram</span>
+      <span class="badge tt">♪ TikTok</span>
+      <span class="badge yt">▶ YouTube</span>
+      <span class="badge more">+ Twitter, Facebook &amp; mehr</span>
+    </div>
+
+    <!-- Main Card -->
+    <div class="card">
+      <div class="card-label">Video-Link transkribieren</div>
+      <div class="input-row">
+        <input
+          type="url"
+          class="url-input"
+          id="urlInput"
+          placeholder="Instagram, TikTok, YouTube oder anderen Link einfügen..."
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <select class="lang-select" id="langSelect">
+          <option value="">Auto</option>
+          <option value="de">Deutsch</option>
+          <option value="en">Englisch</option>
+          <option value="fr">Französisch</option>
+          <option value="es">Spanisch</option>
+          <option value="it">Italienisch</option>
+          <option value="pt">Portugiesisch</option>
+          <option value="nl">Niederländisch</option>
+          <option value="pl">Polnisch</option>
+          <option value="ru">Russisch</option>
+          <option value="ja">Japanisch</option>
+          <option value="ko">Koreanisch</option>
+          <option value="zh">Chinesisch</option>
+          <option value="ar">Arabisch</option>
+          <option value="tr">Türkisch</option>
+        </select>
+        <button class="btn-transcribe" id="transcribeBtn" onclick="startTranscription()">
+          Transkribieren
+        </button>
+      </div>
+
+      <div class="progress-bar-wrap" id="progressWrap">
+        <div class="progress-bar-fill"></div>
+      </div>
+      <div class="progress-text" id="progressText">Transkribiere Video...</div>
+
+      <div class="alert error" id="errorAlert"></div>
+
+      <!-- Result -->
+      <div class="result-card" id="resultCard">
+        <div class="result-header">
+          <div class="result-meta">
+            <span class="platform-tag" id="platformTag"></span>
+            <span class="lang-tag" id="langTag"></span>
+            <span class="method-tag" id="methodTag"></span>
+          </div>
+          <div class="result-actions">
+            <button class="btn-copy" onclick="copyText()">Kopieren</button>
+            <button class="btn-download" onclick="downloadText()">Download</button>
+          </div>
+        </div>
+        <div class="result-text" id="resultText"></div>
+        <span class="segments-toggle" id="segmentsToggle" onclick="toggleSegments()">
+          ▶ Zeitstempel anzeigen
+        </span>
+        <div class="segments-list" id="segmentsList"></div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="history-section" id="historySection" style="display:none">
+      <div class="history-title">Verlauf</div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Powered by <a href="https://supadata.ai" target="_blank">Supadata</a> &amp;
+      <a href="https://openai.com/research/whisper" target="_blank">OpenAI Whisper</a><br>
+      Unterstützt Instagram, TikTok, YouTube, Twitter, Facebook und 1000+ weitere Plattformen
+    </div>
+  </div>
+
+  <script>
+    let currentResult = null;
+    let history = JSON.parse(localStorage.getItem('transcriber_history') || '[]');
+
+    // ── Auth ──────────────────────────────────────────────────────────────────
+    async function checkAuth() {
+      try {
+        const r = await fetch('/api/auth-status');
+        const d = await r.json();
+        if (d.logged_in) {
+          showApp(d.username);
+        } else {
+          showLogin();
+        }
+      } catch {
+        showLogin();
+      }
+    }
+
+    function showLogin() {
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('appScreen').classList.remove('visible');
+    }
+
+    function showApp(username) {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('appScreen').classList.add('visible');
+      document.getElementById('topbarUser').textContent = '👤 ' + username;
+      renderHistory();
+    }
+
+    async function doLogin() {
+      const username = document.getElementById('loginUser').value.trim();
+      const password = document.getElementById('loginPass').value;
+      const btn = document.getElementById('loginBtn');
+      const errEl = document.getElementById('loginError');
+
+      if (!username || !password) {
+        errEl.textContent = 'Bitte Benutzername und Passwort eingeben.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Anmelden...';
+      errEl.style.display = 'none';
+
+      try {
+        const r = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const d = await r.json();
+        if (r.ok && d.success) {
+          showApp(d.username);
+        } else {
+          errEl.textContent = d.error || 'Anmeldung fehlgeschlagen.';
+          errEl.style.display = 'block';
+        }
+      } catch {
+        errEl.textContent = 'Verbindungsfehler. Bitte Seite neu laden.';
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Anmelden';
+      }
+    }
+
+    async function doLogout() {
+      await fetch('/api/logout', { method: 'POST' });
+      document.getElementById('urlInput').value = '';
+      document.getElementById('resultCard').style.display = 'none';
+      document.getElementById('errorAlert').style.display = 'none';
+      showLogin();
+    }
+
+    // Enter-Taste im Login
+    ['loginUser', 'loginPass'].forEach(id => {
+      document.getElementById(id).addEventListener('keydown', e => {
+        if (e.key === 'Enter') doLogin();
+      });
+    });
+
+    // ── Transcription ─────────────────────────────────────────────────────────
+    function detectPlatform(url) {
+      const u = url.toLowerCase();
+      if (u.includes('instagram.com')) return 'instagram';
+      if (u.includes('tiktok.com') || u.includes('vm.tiktok.com')) return 'tiktok';
+      if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
+      if (u.includes('twitter.com') || u.includes('x.com')) return 'twitter';
+      if (u.includes('facebook.com') || u.includes('fb.watch')) return 'facebook';
+      return 'other';
+    }
+
+    function setLoading(loading) {
+      const btn = document.getElementById('transcribeBtn');
+      const wrap = document.getElementById('progressWrap');
+      const txt = document.getElementById('progressText');
+      btn.disabled = loading;
+      btn.innerHTML = loading ? '<span class="spinner"></span>Lädt...' : 'Transkribieren';
+      wrap.style.display = loading ? 'block' : 'none';
+      txt.style.display = loading ? 'block' : 'none';
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorAlert');
+      el.textContent = '⚠ ' + msg;
+      el.style.display = 'block';
+      document.getElementById('resultCard').style.display = 'none';
+    }
+
+    function hideError() {
+      document.getElementById('errorAlert').style.display = 'none';
+    }
+
+    function showResult(data) {
+      const card = document.getElementById('resultCard');
+      const platform = data.platform || detectPlatform(data.url || '');
+
+      const ptag = document.getElementById('platformTag');
+      ptag.textContent = platform.charAt(0).toUpperCase() + platform.slice(1);
+      ptag.className = 'platform-tag ' + platform;
+
+      document.getElementById('langTag').textContent = (data.language || 'auto').toUpperCase();
+      document.getElementById('methodTag').textContent = data.method === 'supadata' ? '⚡ Supadata' : '🎙 Whisper';
+      document.getElementById('resultText').textContent = data.text;
+
+      const segList = document.getElementById('segmentsList');
+      segList.innerHTML = '';
+      if (data.segments && data.segments.length > 0) {
+        data.segments.forEach(seg => {
+          const div = document.createElement('div');
+          div.className = 'segment';
+          div.innerHTML = `<span class="seg-time">${formatTime(seg.start)} → ${formatTime(seg.end)}</span><span class="seg-text">${escapeHtml(seg.text)}</span>`;
+          segList.appendChild(div);
+        });
+        document.getElementById('segmentsToggle').style.display = 'inline-flex';
+      } else {
+        document.getElementById('segmentsToggle').style.display = 'none';
+      }
+
+      card.style.display = 'block';
+      currentResult = data;
+    }
+
+    function formatTime(s) {
+      const m = Math.floor(s / 60);
+      const sec = Math.floor(s % 60);
+      return `${m}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function toggleSegments() {
+      const list = document.getElementById('segmentsList');
+      const toggle = document.getElementById('segmentsToggle');
+      const open = list.style.display === 'block';
+      list.style.display = open ? 'none' : 'block';
+      toggle.textContent = open ? '▶ Zeitstempel anzeigen' : '▼ Zeitstempel ausblenden';
+    }
+
+    function copyText() {
+      if (!currentResult) return;
+      navigator.clipboard.writeText(currentResult.text).then(() => {
+        const btn = document.querySelector('.btn-copy');
+        btn.textContent = '✓ Kopiert!';
+        setTimeout(() => btn.textContent = 'Kopieren', 2000);
+      });
+    }
+
+    function downloadText() {
+      if (!currentResult) return;
+      const blob = new Blob([currentResult.text], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `transkript_${currentResult.platform}_${Date.now()}.txt`;
+      a.click();
+    }
+
+    function saveToHistory(data) {
+      history.unshift(data);
+      if (history.length > 10) history = history.slice(0, 10);
+      localStorage.setItem('transcriber_history', JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const section = document.getElementById('historySection');
+      const list = document.getElementById('historyList');
+      if (history.length === 0) { section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      list.innerHTML = '';
+      history.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.onclick = () => { showResult(item); hideError(); };
+        const platform = item.platform || 'other';
+        div.innerHTML = `
+          <div class="history-item-header">
+            <span class="platform-tag ${platform}" style="font-size:0.7rem;padding:2px 8px">${platform.charAt(0).toUpperCase()+platform.slice(1)}</span>
+            <span class="lang-tag" style="font-size:0.7rem">${(item.language||'?').toUpperCase()}</span>
+          </div>
+          <div class="history-item-text">${escapeHtml((item.text||'').slice(0, 120))}...</div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    async function startTranscription() {
+      const url = document.getElementById('urlInput').value.trim();
+      const lang = document.getElementById('langSelect').value;
+
+      if (!url) { showError('Bitte einen Link eingeben.'); return; }
+
+      hideError();
+      setLoading(true);
+      document.getElementById('resultCard').style.display = 'none';
+
+      try {
+        const resp = await fetch('/api/transcribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url, language: lang || null }),
+        });
+        const data = await resp.json();
+
+        if (resp.status === 401 && data.login_required) {
+          showLogin();
+          return;
+        }
+
+        if (!resp.ok || data.error) {
+          showError(data.error || 'Unbekannter Fehler.');
+          return;
+        }
+
+        showResult(data);
+        saveToHistory(data);
+      } catch {
+        showError('Verbindungsfehler. Bitte Seite neu laden.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    document.getElementById('urlInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') startTranscription();
+    });
+
+    // Beim Start Auth prüfen
+    checkAuth();
+  </script>
+</body>
+</html>

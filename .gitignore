@@ -1,0 +1,7 @@
+downloads/
+*.log
+__pycache__/
+*.pyc
+.env
+cookies.txt
+nohup.out
